@@ -1,0 +1,6 @@
+FROM apache/superset
+USER root
+RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
+    python get-pip.py && \
+    pip install duckdb-engine duckdb
+USER superset
