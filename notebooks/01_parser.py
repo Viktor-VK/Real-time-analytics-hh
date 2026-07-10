@@ -209,14 +209,17 @@ print("Функции парсинга обновлены!")
 def fetch_vacancies(segments):
     """Собирает вакансии по всем сегментам (регион × опыт × формат × зарплата)"""
     from tqdm import tqdm
-    
+
     driver = create_driver()
     all_vacancies = []
-    
+
+    print(f"\n=== Начинаем сбор: {len(segments)} сегментов ===", flush=True)
+
     try:
         with tqdm(total=len(segments), desc="Сбор вакансий", unit="сегм") as pbar:
-            for area, experience, work_format, has_salary in segments:
-                
+            for idx, (area, experience, work_format, has_salary) in enumerate(segments, start=1):
+                segment_count = 0
+
                 for page in range(40):
                     url = (
                         f"{BASE_URL}"
@@ -229,29 +232,45 @@ def fetch_vacancies(segments):
                         f"&only_with_salary={has_salary}"
                         f"&page={page}"
                     )
-                    
+
                     driver.get(url)
                     time.sleep(2)
-                    
+
                     soup = BeautifulSoup(driver.page_source, "lxml")
                     cards = soup.find_all("div", {"data-qa": "vacancy-serp__vacancy"})
-                    
+
                     if not cards:
+                        if page == 0:
+                            print(
+                                f"  [!] Сегмент {idx}/{len(segments)}: 0 карточек уже на "
+                                f"первой странице (area={area}, exp={experience}, "
+                                f"format={work_format}, has_salary={has_salary}) — "
+                                f"возможна блокировка/капча",
+                                flush=True,
+                            )
                         break
-                    
+
                     for card in cards:
                         vacancy = parse_vacancy_card(card)
                         if vacancy:
                             all_vacancies.append(vacancy)
-                    
+                            segment_count += 1
+
                     time.sleep(1)
-                
+
+                print(
+                    f"Сегмент {idx}/{len(segments)} "
+                    f"(area={area}, exp={experience}, format={work_format}, has_salary={has_salary}): "
+                    f"собрано {segment_count} | накоплено всего {len(all_vacancies)}",
+                    flush=True,
+                )
+
                 pbar.set_postfix({"собрано": len(all_vacancies)})
                 pbar.update(1)
-    
+
     finally:
         driver.quit()
-    
+
     print(f"\nИтого собрано: {len(all_vacancies)} вакансий")
     return all_vacancies
 
