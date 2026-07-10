@@ -103,7 +103,9 @@ def create_driver():
     )
     
     driver = webdriver.Chrome(options=options)
+    driver.set_page_load_timeout(30)  # не ждать загрузку страницы дольше 30 секунд
     print("Браузер запущен в фоновом режиме")
+    return driver
     return driver
 
 # Проверяем
@@ -209,6 +211,7 @@ print("Функции парсинга обновлены!")
 def fetch_vacancies(segments):
     """Собирает вакансии по всем сегментам (регион × опыт × формат × зарплата)"""
     from tqdm import tqdm
+    from selenium.common.exceptions import TimeoutException, WebDriverException
 
     driver = create_driver()
     all_vacancies = []
@@ -233,7 +236,28 @@ def fetch_vacancies(segments):
                         f"&page={page}"
                     )
 
-                    driver.get(url)
+                    loaded = False
+                    for attempt in range(2):
+                        try:
+                            driver.get(url)
+                            loaded = True
+                            break
+                        except (TimeoutException, WebDriverException) as e:
+                            print(
+                                f"  [!] Ошибка загрузки (сегмент {idx}/{len(segments)}, "
+                                f"page={page}, попытка {attempt + 1}/2): {type(e).__name__}",
+                                flush=True,
+                            )
+                            time.sleep(3)
+
+                    if not loaded:
+                        print(
+                            f"  [!] Пропускаем страницу {page} сегмента {idx}/{len(segments)} "
+                            f"— не удалось загрузить после 2 попыток",
+                            flush=True,
+                        )
+                        continue
+
                     time.sleep(2)
 
                     soup = BeautifulSoup(driver.page_source, "lxml")
