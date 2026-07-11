@@ -42,6 +42,7 @@ import pandas as pd
 import duckdb
 from datetime import datetime
 import time
+import random
 import json
 from tqdm import tqdm
 from selenium import webdriver
@@ -258,13 +259,15 @@ def fetch_vacancies(segments):
                         )
                         continue
 
-                    time.sleep(2)
+                    time.sleep(random.uniform(2, 4))
 
                     soup = BeautifulSoup(driver.page_source, "lxml")
                     cards = soup.find_all("div", {"data-qa": "vacancy-serp__vacancy"})
 
                     if not cards:
                         if page == 0:
+                            page_title = driver.title
+                            page_text_snippet = soup.get_text(separator=" ", strip=True)[:300]
                             print(
                                 f"  [!] Сегмент {idx}/{len(segments)}: 0 карточек уже на "
                                 f"первой странице (area={area}, exp={experience}, "
@@ -272,6 +275,8 @@ def fetch_vacancies(segments):
                                 f"возможна блокировка/капча",
                                 flush=True,
                             )
+                            print(f"      title страницы: {page_title!r}", flush=True)
+                            print(f"      текст страницы (первые 300 симв.): {page_text_snippet!r}", flush=True)
                         break
 
                     for card in cards:
@@ -280,7 +285,7 @@ def fetch_vacancies(segments):
                             all_vacancies.append(vacancy)
                             segment_count += 1
 
-                    time.sleep(1)
+                    time.sleep(random.uniform(2, 5))
 
                 print(
                     f"Сегмент {idx}/{len(segments)} "
@@ -291,6 +296,11 @@ def fetch_vacancies(segments):
 
                 pbar.set_postfix({"собрано": len(all_vacancies)})
                 pbar.update(1)
+
+                # Пауза между сегментами — "остывание" перед следующей пачкой запросов
+                cooldown = random.uniform(8, 20)
+                print(f"  ... пауза между сегментами: {cooldown:.1f} сек", flush=True)
+                time.sleep(cooldown)
 
     finally:
         driver.quit()
