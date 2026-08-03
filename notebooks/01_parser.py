@@ -262,7 +262,7 @@ def fetch_vacancies(segments):
                     time.sleep(random.uniform(2, 4))
 
                     soup = BeautifulSoup(driver.page_source, "lxml")
-                    cards = soup.find_all("div", {"data-qa": "vacancy-serp__vacancy"})
+                    cards = soup.find_all(attrs={"data-qa": "vacancy-serp__vacancy"})
 
                     if not cards:
                         if page == 0:
