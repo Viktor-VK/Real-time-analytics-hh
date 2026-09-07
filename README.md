@@ -94,52 +94,6 @@ hh.ru
 
 ---
 
-## Запуск локально
-
-### 1. Клонировать репозиторий
-```bash
-git clone https://github.com/Viktor-VK/Real-time-analytics-hh.git
-cd Real-time-analytics-hh
-```
-
-### 2. Установить зависимости парсера
-```bash
-python -m venv venv
-venv\Scripts\activate      # Windows
-pip install -r requirements.txt
-```
-
-### 3. Запустить парсер
-```bash
-# Открыть notebooks/01_parser.ipynb и выполнить все ячейки
-```
-
-Данные сохранятся в `data/hh_vacancies.duckdb`.
-
-### 4. Запустить Superset
-```bash
-docker build -f Dockerfile.superset -t superset-duckdb .
-
-docker run -d \
-  --name superset \
-  -p 8088:8088 \
-  -v "%cd%/data:/app/data" \
-  -v superset_home:/app/superset_home \
-  -v "%cd%/pythonpath:/app/pythonpath" \
-  -e SUPERSET_SECRET_KEY=your_secret_key \
-  superset-duckdb
-
-docker exec superset superset db upgrade
-docker exec superset superset init
-docker exec superset superset fab create-admin \
-  --username admin --firstname Admin --lastname Admin \
-  --email admin@admin.com --password admin
-```
-
-Открыть: [http://localhost:8088](http://localhost:8088)
-
----
-
 ## Структура репозитория
 
 ```
